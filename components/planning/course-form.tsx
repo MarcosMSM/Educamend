@@ -11,6 +11,7 @@ import {
   SPECIAL_COURSE_OPTIONS,
 } from "@/lib/validation/courses"
 import { useCloseDialogOnSuccess } from "@/hooks/use-close-dialog-on-success"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -51,12 +52,16 @@ export function CourseForm({
   terms,
   availableSubjects,
   course,
+  triggerClassName,
+  triggerSize,
 }: {
   studentId: string
   academicYearId: string
   terms: Option[]
   availableSubjects: Option[]
   course?: Course
+  triggerClassName?: string
+  triggerSize?: "default" | "sm"
 }) {
   const [open, setOpen] = useState(false)
   const isEditing = !!course
@@ -77,7 +82,11 @@ export function CourseForm({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size={isEditing ? "sm" : "default"} variant={isEditing ? "outline" : "default"} />
+          <Button
+            size={triggerSize ?? (isEditing ? "sm" : "default")}
+            variant={isEditing ? "outline" : "default"}
+            className={cn(triggerClassName)}
+          />
         }
       >
         {isEditing ? (

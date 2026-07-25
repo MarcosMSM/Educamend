@@ -1,36 +1,16 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { BookOpen, Compass, Trophy } from "lucide-react"
+import { Citrus, GitBranch, Plus, Sparkles, Sprout, Trophy } from "lucide-react"
 
-import { getUserFamilies } from "@/lib/auth"
 import { getStudentById } from "@/lib/data/students"
-import { getDailyStudentQuote } from "@/lib/student-quotes"
-import { initials } from "@/lib/utils"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { getPlanningOverview } from "@/lib/data/planning"
+import { getJourneyExperiences, getJourneyStats } from "@/lib/data/journey"
+import { getHighlights } from "@/lib/data/portfolio"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeleteStudentButton } from "@/components/students/delete-student-button"
-import { EditGradeLevelForm } from "@/components/students/edit-grade-level-form"
-
-const ACTIONS = [
-  {
-    icon: BookOpen,
-    title: "Aprendizagem",
-    description: "Continuar estudos",
-    href: (id: string) => `/students/${id}/planning`,
-  },
-  {
-    icon: Compass,
-    title: "Experiências",
-    description: "Registrar nova experiência",
-    href: (id: string) => `/students/${id}/journey/new`,
-  },
-  {
-    icon: Trophy,
-    title: "Portfólio",
-    description: "Gerar portfólio",
-    href: (id: string) => `/students/${id}/portfolio/generate`,
-  },
-] as const
+import { StudentHeroBanner } from "@/components/students/student-hero-banner"
+import { JourneyOverviewCard, type JourneyStage } from "@/components/students/journey-overview-card"
 
 export default async function StudentOverviewPage({
   params,
@@ -38,59 +18,111 @@ export default async function StudentOverviewPage({
   params: Promise<{ studentId: string }>
 }) {
   const { studentId } = await params
-  const [student, families] = await Promise.all([getStudentById(studentId), getUserFamilies()])
+  const student = await getStudentById(studentId)
 
   if (!student) {
     notFound()
   }
 
-  const city = families[0]?.city ?? null
-  const quote = getDailyStudentQuote()
+  const [years, journeyStats, experiences, highlights] = await Promise.all([
+    getPlanningOverview(studentId),
+    getJourneyStats(studentId),
+    getJourneyExperiences(studentId),
+    getHighlights(studentId),
+  ])
+
+  const totalCourses = years.reduce((sum, year) => sum + year.courses.length, 0)
+  const inProgressExperiences = experiences.filter(
+    (experience) => experience.status === "rascunho" || experience.status === "aguardando_validacao"
+  ).length
+  const totalAttachments = experiences.reduce(
+    (sum, experience) => sum + experience.attachments.length,
+    0
+  )
+
+  const stages: JourneyStage[] = [
+    {
+      tone: "roots",
+      icon: Sprout,
+      step: "Etapa 01",
+      title: "Aprendizagem",
+      description: "Organize planejamentos, materiais, disciplinas e avaliações.",
+      badges: [
+        `${years.length} planejamento${years.length === 1 ? "" : "s"}`,
+        `${totalCourses} disciplina${totalCourses === 1 ? "" : "s"}`,
+      ],
+      href: `/students/${studentId}/planning`,
+    },
+    {
+      tone: "branches",
+      icon: GitBranch,
+      step: "Etapa 02",
+      title: "Experiências",
+      description: "Registre projetos, viagens, atividades, voluntariado e vivências práticas.",
+      badges: [
+        `${journeyStats.experiences} experiência${journeyStats.experiences === 1 ? "" : "s"}`,
+        ...(inProgressExperiences > 0 ? [`${inProgressExperiences} em andamento`] : []),
+      ],
+      href: `/students/${studentId}/journey`,
+    },
+    {
+      tone: "fruit",
+      icon: Citrus,
+      step: "Etapa 03",
+      title: "Competências",
+      description: "Identifique habilidades desenvolvidas ao longo da jornada.",
+      badges: [
+        `${journeyStats.skills} competência${journeyStats.skills === 1 ? "" : "s"}`,
+        ...(journeyStats.skills > 0 ? ["Em evolução"] : []),
+      ],
+      href: `/students/${studentId}/journey/old?tab=skills`,
+    },
+    {
+      tone: "harvest",
+      icon: Trophy,
+      step: "Etapa 04",
+      title: "Portfólio",
+      description: "Reúna trabalhos, certificados, produções e conquistas para compartilhar.",
+      badges: [
+        `${totalAttachments} evidência${totalAttachments === 1 ? "" : "s"}`,
+        `${highlights.length} documento${highlights.length === 1 ? "" : "s"}`,
+      ],
+      href: `/students/${studentId}/portfolio/generate`,
+    },
+  ]
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-col items-center gap-3 py-4 text-center">
-        <Avatar size="lg">
-          <AvatarFallback className="text-lg">{initials(student.full_name)}</AvatarFallback>
-        </Avatar>
-        <div className="grid gap-1">
-          <h1 className="text-2xl font-bold tracking-tight">{student.full_name}</h1>
-          <p className="max-w-md text-sm text-muted-foreground italic">&quot;{quote}&quot;</p>
+      <StudentHeroBanner
+        studentId={studentId}
+        studentName={student.full_name}
+        gradeLevel={student.grade_level}
+        avatarUrl={student.avatar_url}
+        years={years.map((year) => ({ id: year.id, name: year.name, status: year.status }))}
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-tree-fruit/15 text-tree-fruit">
+            <Sparkles className="size-4" />
+          </div>
+          <div>
+            <p className="font-heading text-xl font-semibold">
+              Jornada <span className="font-sans text-base font-normal text-muted-foreground">· Visão Geral</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Acompanhe os pilares que formam a trajetória acadêmica, pessoal e prática do
+              estudante.
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <span>{student.grade_level || "Série não informada"}</span>
-          <EditGradeLevelForm studentId={studentId} gradeLevel={student.grade_level} />
-          {city && (
-            <>
-              <span>·</span>
-              <span>{city}</span>
-            </>
-          )}
-        </div>
+        <Button render={<Link href={`/students/${studentId}/journey/new`} />} nativeButton={false} variant="outline">
+          <Plus />
+          Registrar nova etapa
+        </Button>
       </div>
 
-      <div className="grid gap-2">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          O que você deseja fazer hoje?
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {ACTIONS.map(({ icon: Icon, title, description, href }) => (
-            <Link key={title} href={href(studentId)}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <CardContent className="grid gap-2">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <Icon className="size-5" />
-                  </div>
-                  <div>
-                    <p className="font-heading font-medium">{title}</p>
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
+      <JourneyOverviewCard stages={stages} />
 
       <Card>
         <CardHeader>

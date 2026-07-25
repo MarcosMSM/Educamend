@@ -29,9 +29,9 @@ export default async function GeneratePortfolioPage({
   return (
     <div className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Gerar portfólio</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Colher seu portfólio</h1>
         <p className="text-sm text-muted-foreground">
-          Para qual objetivo você deseja criar um portfólio?
+          Para qual objetivo você quer colher os melhores frutos da jornada?
         </p>
       </div>
 

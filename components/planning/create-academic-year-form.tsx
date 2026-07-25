@@ -32,7 +32,7 @@ export function CreateAcademicYearForm({ studentId }: { studentId: string }) {
         setOpen(nextOpen)
       }}
     >
-      <DialogTrigger render={<Button size="sm" />}>
+      <DialogTrigger render={<Button className="h-9 px-4" />}>
         <Plus />
         Novo ano letivo
       </DialogTrigger>

@@ -1,6 +1,6 @@
 import "server-only"
 
-import { buildSeedExperiences } from "@/lib/mock/journey-experiences"
+import { createClient } from "@/lib/supabase/server"
 import {
   JOURNEY_CATEGORY_GROUPS,
   JOURNEY_GROUP_LABELS,
@@ -12,23 +12,6 @@ import {
   type JourneyStatus,
   type JourneyVisibility,
 } from "@/lib/validation/journey"
-
-/**
- * Mock, in-memory data-access layer for "Minha Jornada".
- *
- * Every read function here is `async` and takes the same shape it would
- * take against a real `journey_experiences` Supabase table, so swapping
- * this module for real queries later shouldn't require touching any
- * caller. The trade-off: `store` lives on `globalThis` (see below) rather
- * than a plain module-level variable, because Next.js dev (Turbopack) can
- * instantiate this module separately per route bundle — a plain `let`
- * would silently desync between e.g. `/journey` and
- * `/journey/[experienceId]/edit`. `globalThis` is the standard workaround
- * (same trick used for singleton DB clients in Next.js apps) and keeps
- * one shared store per Node.js process. It still resets on server
- * restart and is not shared across serverless/multi-instance deploys —
- * acceptable for a mock demo layer.
- */
 
 export type JourneyAttachment = {
   id: string
@@ -58,12 +41,6 @@ export type JourneyExperience = {
   updated_at: string
 }
 
-declare global {
-  var __journeyExperienceStore: JourneyExperience[] | undefined
-}
-
-const store: JourneyExperience[] = (globalThis.__journeyExperienceStore ??= [])
-
 /** Categories treated as "project-like" for the Projetos tab and the projects stat. */
 export const PROJECT_LIKE_CATEGORIES: JourneyCategory[] = [
   "projeto_pessoal",
@@ -73,12 +50,6 @@ export const PROJECT_LIKE_CATEGORIES: JourneyCategory[] = [
   "feira_ciencias",
   "empreendedorismo",
 ]
-
-function ensureSeed(studentId: string) {
-  if (!store.some((experience) => experience.student_id === studentId)) {
-    store.push(...buildSeedExperiences(studentId))
-  }
-}
 
 function sortByDateDesc(experiences: JourneyExperience[]) {
   return [...experiences].sort((a, b) => {
@@ -101,21 +72,27 @@ export async function getJourneyExperiences(
   studentId: string,
   filters: JourneyFilters = {}
 ): Promise<JourneyExperience[]> {
-  ensureSeed(studentId)
+  const supabase = await createClient()
 
-  let results = store.filter((experience) => experience.student_id === studentId)
+  let query = supabase.from("journey_experiences").select("*").eq("student_id", studentId)
 
   if (filters.category) {
-    results = results.filter((experience) => experience.category === filters.category)
+    query = query.eq("category", filters.category)
   }
-
   if (filters.status) {
-    results = results.filter((experience) => experience.status === filters.status)
+    query = query.eq("status", filters.status)
+  }
+  if (filters.skill) {
+    query = query.contains("skills", [filters.skill])
   }
 
-  if (filters.skill) {
-    results = results.filter((experience) => experience.skills.includes(filters.skill!))
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(`Failed to load experiences: ${error.message}`)
   }
+
+  let results = data as JourneyExperience[]
 
   if (filters.period) {
     results = results.filter((experience) =>
@@ -138,12 +115,21 @@ export async function getJourneyExperiences(
 }
 
 export async function getJourneyYears(studentId: string): Promise<string[]> {
-  ensureSeed(studentId)
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("journey_experiences")
+    .select("start_date, end_date, created_at")
+    .eq("student_id", studentId)
+
+  if (error) {
+    throw new Error(`Failed to load experience years: ${error.message}`)
+  }
 
   const years = new Set(
-    store
-      .filter((experience) => experience.student_id === studentId)
-      .map((experience) => (experience.start_date ?? experience.end_date ?? experience.created_at).slice(0, 4))
+    data.map((experience) =>
+      (experience.start_date ?? experience.end_date ?? experience.created_at).slice(0, 4)
+    )
   )
 
   return [...years].sort((a, b) => b.localeCompare(a))
@@ -152,7 +138,19 @@ export async function getJourneyYears(studentId: string): Promise<string[]> {
 export async function getJourneyExperienceById(
   experienceId: string
 ): Promise<JourneyExperience | null> {
-  return store.find((experience) => experience.id === experienceId) ?? null
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("journey_experiences")
+    .select("*")
+    .eq("id", experienceId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to load experience: ${error.message}`)
+  }
+
+  return data as JourneyExperience | null
 }
 
 export type JourneyStats = {
@@ -165,11 +163,22 @@ export type JourneyStats = {
 }
 
 export async function getJourneyStats(studentId: string): Promise<JourneyStats> {
-  ensureSeed(studentId)
+  const supabase = await createClient()
 
-  const experiences = store.filter(
-    (experience) => experience.student_id === studentId && experience.status !== "arquivada"
-  )
+  const { data, error } = await supabase
+    .from("journey_experiences")
+    .select("category, hours, attachments, status, skills")
+    .eq("student_id", studentId)
+    .neq("status", "arquivada")
+
+  if (error) {
+    throw new Error(`Failed to load experience stats: ${error.message}`)
+  }
+
+  const experiences = data as Pick<
+    JourneyExperience,
+    "category" | "hours" | "attachments" | "status" | "skills"
+  >[]
 
   const hours = experiences.reduce((sum, experience) => sum + (experience.hours ?? 0), 0)
   const projects = experiences.filter((experience) =>
@@ -229,9 +238,18 @@ const GROUP_SUGGESTIONS: Record<JourneyGroup, string[]> = {
  * only counts derived from the student's own recorded experiences.
  */
 export async function getJourneyInsights(studentId: string): Promise<JourneyInsight[]> {
-  ensureSeed(studentId)
+  const supabase = await createClient()
 
-  const experiences = store.filter((experience) => experience.student_id === studentId)
+  const { data, error } = await supabase
+    .from("journey_experiences")
+    .select("category, skills, status")
+    .eq("student_id", studentId)
+
+  if (error) {
+    throw new Error(`Failed to load experience insights: ${error.message}`)
+  }
+
+  const experiences = data as Pick<JourneyExperience, "category" | "skills" | "status">[]
 
   if (experiences.length === 0) {
     return []
@@ -294,9 +312,7 @@ export async function getJourneyInsights(studentId: string): Promise<JourneyInsi
 }
 
 // --- Internal mutation helpers -------------------------------------------
-// Only actions/journey.ts should import these. A real Supabase-backed
-// version would replace their bodies with `supabase.from("journey_experiences")`
-// calls while keeping these exact signatures.
+// Only actions/journey.ts should import these.
 
 export type NewJourneyExperienceInput = {
   student_id: string
@@ -304,56 +320,61 @@ export type NewJourneyExperienceInput = {
   category: JourneyCategory
 }
 
-export function _insertExperience(input: NewJourneyExperienceInput): JourneyExperience {
-  const now = new Date().toISOString()
-  const experience: JourneyExperience = {
-    id: crypto.randomUUID(),
-    student_id: input.student_id,
-    title: input.title,
-    category: input.category,
-    organization: null,
-    description: null,
-    start_date: null,
-    end_date: null,
-    hours: null,
-    reflection: null,
-    skills: [],
-    attachments: [],
-    status: "rascunho",
-    visibility: "private",
-    validated_by: null,
-    validated_at: null,
-    created_at: now,
-    updated_at: now,
+export async function _insertExperience(
+  input: NewJourneyExperienceInput
+): Promise<JourneyExperience> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("journey_experiences")
+    .insert({
+      student_id: input.student_id,
+      title: input.title,
+      category: input.category,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error(`Failed to create experience: ${error.message}`)
   }
-  store.push(experience)
-  return experience
+
+  return data as JourneyExperience
 }
 
-export function _updateExperience(
+export async function _updateExperience(
   experienceId: string,
   patch: Partial<Omit<JourneyExperience, "id" | "student_id" | "created_at">>
-): JourneyExperience | null {
-  const index = store.findIndex((experience) => experience.id === experienceId)
-  if (index === -1) {
-    return null
+): Promise<JourneyExperience | null> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("journey_experiences")
+    .update(patch)
+    .eq("id", experienceId)
+    .select()
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to update experience: ${error.message}`)
   }
-  const updated: JourneyExperience = {
-    ...store[index],
-    ...patch,
-    updated_at: new Date().toISOString(),
-  }
-  store[index] = updated
-  return updated
+
+  return data as JourneyExperience | null
 }
 
-export function _deleteExperience(experienceId: string): boolean {
-  const index = store.findIndex((experience) => experience.id === experienceId)
-  if (index === -1) {
-    return false
+export async function _deleteExperience(experienceId: string): Promise<boolean> {
+  const supabase = await createClient()
+
+  const { error, count } = await supabase
+    .from("journey_experiences")
+    .delete({ count: "exact" })
+    .eq("id", experienceId)
+
+  if (error) {
+    throw new Error(`Failed to delete experience: ${error.message}`)
   }
-  store.splice(index, 1)
-  return true
+
+  return (count ?? 0) > 0
 }
 
 /**

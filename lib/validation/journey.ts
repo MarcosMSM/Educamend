@@ -222,3 +222,28 @@ export const SubmitJourneyExperienceSchema = z.object({
 export type SubmitJourneyExperienceState =
   | { message?: string }
   | undefined
+
+export const QuickCreateJourneyExperienceSchema = z.object({
+  title: z.string().trim().min(2, "Informe um título."),
+  type: z.enum(["trabalho", "projeto", "voluntariado", "intercambio", "servico"]),
+  organization: z.string().trim().max(160).optional().or(z.literal("")),
+  startDate: z.string().trim().optional().or(z.literal("")),
+  endDate: z.string().trim().optional().or(z.literal("")),
+  hours: z.coerce.number().min(0).max(10000).optional(),
+  status: z.enum(JOURNEY_STATUSES),
+  description: z.string().trim().max(4000).optional().or(z.literal("")),
+  skills: z.array(z.enum(JOURNEY_SKILLS)).optional(),
+  attachments: z.array(JourneyAttachmentSchema).optional(),
+})
+
+export type QuickCreateJourneyExperienceState =
+  | {
+      errors?: {
+        title?: string[]
+        type?: string[]
+        hours?: string[]
+        status?: string[]
+      }
+      message?: string
+    }
+  | undefined

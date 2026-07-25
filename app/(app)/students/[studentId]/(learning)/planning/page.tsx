@@ -1,17 +1,16 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, BookOpen, Diamond, Download, RotateCw } from "lucide-react"
 
 import { getUserFamilies } from "@/lib/auth"
 import { getAvailableSubjects } from "@/lib/data/curriculum"
 import { getPlanningOverview } from "@/lib/data/planning"
 import { GRADE_LABELS, SPECIAL_COURSE_LABELS } from "@/lib/validation/courses"
 import { CreateAcademicYearForm } from "@/components/planning/create-academic-year-form"
-import { CreateTermForm } from "@/components/planning/create-term-form"
 import { CourseForm } from "@/components/planning/course-form"
-import { DeleteCourseButton } from "@/components/planning/delete-course-button"
-import { CopyCourseButton } from "@/components/planning/copy-course-button"
+import { CourseActionsMenu } from "@/components/planning/v2/course-actions-menu"
 import { UpdateAcademicYearForm } from "@/components/planning/update-academic-year-form"
+import { CourseStatusPill } from "@/components/planning/course-status-pill"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -21,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { relation } from "@/lib/utils"
+import { cn, relation } from "@/lib/utils"
 
 const STATUS_LABELS: Record<string, string> = {
   planning: "Planejamento",
@@ -31,8 +30,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default async function PlanningPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ studentId: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { studentId } = await params
   const families = await getUserFamilies()
@@ -42,18 +43,24 @@ export default async function PlanningPage({
     redirect("/onboarding/family")
   }
 
-  const [years, availableSubjects] = await Promise.all([
+  const [allYears, availableSubjects] = await Promise.all([
     getPlanningOverview(studentId),
     getAvailableSubjects(family.id),
   ])
 
+  const sp = await searchParams
+  const yearFilter = typeof sp.year === "string" ? sp.year : "all"
+  const years = yearFilter === "all" ? allYears : allYears.filter((year) => year.name === yearFilter)
+
   return (
     <div className="grid gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Planejamento</h2>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="grid gap-1">
+          <p className="text-xs font-semibold tracking-wide text-tree-branches uppercase">
+            Planejamento · Visão acadêmica
+          </p>
           <p className="text-sm text-muted-foreground">
-            Ano letivo, cursos, materiais e notas em um só lugar.
+            Acompanhe disciplinas, materiais, períodos, créditos e o progresso do ano letivo.
           </p>
           <Link
             href={`/students/${studentId}/planning/v2`}
@@ -63,50 +70,98 @@ export default async function PlanningPage({
             <ArrowRight className="size-3.5" />
           </Link>
         </div>
-        <CreateAcademicYearForm studentId={studentId} />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 rounded-full bg-muted p-1">
+            <Link
+              href="?year=all"
+              className={cn(
+                "rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+                yearFilter === "all"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Todos
+            </Link>
+            {[...allYears]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((year) => (
+              <Link
+                key={year.id}
+                href={`?year=${encodeURIComponent(year.name)}`}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+                  yearFilter === year.name
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {year.name}
+              </Link>
+            ))}
+          </div>
+          <Link
+            href={`/students/${studentId}/reports`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-sidebar px-4 text-sm font-medium text-white transition-colors hover:bg-sidebar/90"
+          >
+            <Download className="size-4" />
+            Exportar PDF
+          </Link>
+          <CreateAcademicYearForm studentId={studentId} />
+        </div>
       </div>
 
       {years.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nenhum ano letivo cadastrado ainda.
-        </p>
+        <p className="text-sm text-muted-foreground">Nenhum ano letivo cadastrado ainda.</p>
       ) : (
         years.map((year) => (
-          <div key={year.id} className="overflow-hidden rounded-xl border">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-primary px-4 py-3 text-primary-foreground">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="font-semibold">{year.name}</span>
-                <span className="text-sm opacity-90">
-                  Créditos concluídos: {year.creditsCompleted.toFixed(2)}
-                </span>
-                <span className="text-sm opacity-90">
-                  Em andamento: {year.creditsInProgress.toFixed(2)}
-                </span>
-                <Badge variant="secondary">
-                  {STATUS_LABELS[year.status] ?? year.status}
-                </Badge>
+          <div key={year.id} className="overflow-hidden rounded-3xl ring-1 ring-foreground/10">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-tree-branches px-4 py-2.5 text-white">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                  <BookOpen className="size-4" />
+                </div>
+                <span className="text-sm font-semibold">{year.name}</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-4 text-xs">
+                <span className="flex items-center gap-1.5 text-white/80">
+                  <Diamond className="size-3.5 text-tree-fruit" />
+                  Créditos concluídos{" "}
+                  <span className="font-semibold text-white">
+                    {year.creditsCompleted.toFixed(2)}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1.5 text-white/80">
+                  <RotateCw className="size-3.5 text-tree-fruit" />
+                  Em andamento{" "}
+                  <span className="font-semibold text-white">
+                    {year.creditsInProgress.toFixed(2)}
+                  </span>
+                </span>
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-[var(--sidebar)]">
+                  {STATUS_LABELS[year.status] ?? year.status}
+                </span>
+              </div>
+              <div className="flex gap-1.5">
                 {year.terms.length > 0 && (
                   <CourseForm
                     studentId={studentId}
                     academicYearId={year.id}
                     terms={year.terms}
                     availableSubjects={availableSubjects}
+                    triggerClassName="bg-white text-[var(--sidebar)] hover:bg-white/90"
+                    triggerSize="sm"
                   />
                 )}
-                <UpdateAcademicYearForm
-                  studentId={studentId}
-                  academicYear={year}
-                />
+                <UpdateAcademicYearForm studentId={studentId} academicYear={year} />
               </div>
             </div>
 
-            <div className="p-4">
+            <div className="bg-card p-4">
               {year.terms.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Não foi possível criar os períodos automaticamente. Crie um
-                  período manualmente para começar a adicionar cursos.
+                  Não foi possível criar os períodos automaticamente para este ano letivo.
                 </p>
               ) : year.courses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
@@ -116,9 +171,10 @@ export default async function PlanningPage({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Curso</TableHead>
+                      <TableHead>Disciplina</TableHead>
                       <TableHead>Material</TableHead>
                       <TableHead>Período</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Nota</TableHead>
                       <TableHead>Créditos</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -128,33 +184,37 @@ export default async function PlanningPage({
                     {year.courses.map((course) => (
                       <TableRow key={course.id}>
                         <TableCell className="whitespace-normal">
-                          <div className="font-medium">{course.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {relation(course.subjects)?.name}
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-tree-branches/15 text-tree-branches">
+                              <BookOpen className="size-4" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{course.title}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {relation(course.subjects)?.name}
+                              </div>
+                              {course.special_course &&
+                                course.special_course !== "nenhum" && (
+                                  <Badge variant="outline" className="mt-1">
+                                    {SPECIAL_COURSE_LABELS[
+                                      course.special_course as keyof typeof SPECIAL_COURSE_LABELS
+                                    ] ?? course.special_course}
+                                  </Badge>
+                                )}
+                            </div>
                           </div>
-                          {course.special_course &&
-                            course.special_course !== "nenhum" && (
-                              <Badge variant="outline" className="mt-1">
-                                {SPECIAL_COURSE_LABELS[
-                                  course.special_course as keyof typeof SPECIAL_COURSE_LABELS
-                                ] ?? course.special_course}
-                              </Badge>
-                            )}
                         </TableCell>
                         <TableCell className="whitespace-normal text-sm text-muted-foreground">
                           {course.resource || "—"}
                         </TableCell>
                         <TableCell>{relation(course.terms)?.name}</TableCell>
                         <TableCell>
-                          {course.grade ? (
-                            <Badge>
-                              {GRADE_LABELS[
-                                course.grade as keyof typeof GRADE_LABELS
-                              ] ?? course.grade}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                          <CourseStatusPill grade={course.grade} />
+                        </TableCell>
+                        <TableCell>
+                          {course.grade
+                            ? (GRADE_LABELS[course.grade as keyof typeof GRADE_LABELS] ?? course.grade)
+                            : "—"}
                         </TableCell>
                         <TableCell>
                           {course.credits ? Number(course.credits).toFixed(2) : "—"}
@@ -168,14 +228,7 @@ export default async function PlanningPage({
                               availableSubjects={availableSubjects}
                               course={course}
                             />
-                            <CopyCourseButton
-                              studentId={studentId}
-                              courseId={course.id}
-                            />
-                            <DeleteCourseButton
-                              studentId={studentId}
-                              courseId={course.id}
-                            />
+                            <CourseActionsMenu studentId={studentId} courseId={course.id} />
                           </div>
                         </TableCell>
                       </TableRow>
@@ -183,10 +236,6 @@ export default async function PlanningPage({
                   </TableBody>
                 </Table>
               )}
-
-              <div className="mt-3">
-                <CreateTermForm studentId={studentId} academicYearId={year.id} />
-              </div>
             </div>
           </div>
         ))

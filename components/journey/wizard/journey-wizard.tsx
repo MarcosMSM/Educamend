@@ -158,7 +158,7 @@ export function JourneyWizard({
     autosave.save(toAutosavePayload({ attachments: nextAttachments }))
   }
 
-  const closeHref = `/students/${studentId}/journey?tab=timeline`
+  const closeHref = `/students/${studentId}/journey/old?tab=timeline`
 
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-6">

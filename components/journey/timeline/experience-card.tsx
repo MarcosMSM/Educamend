@@ -76,7 +76,7 @@ export function ExperienceCard({
                 ? `${experience.attachments.length} evidência${experience.attachments.length > 1 ? "s" : ""}`
                 : "Sem evidências"}
             </div>
-            <Button render={<Link href={viewHref} />} nativeButton={false} variant="ghost" size="sm">
+            <Button render={<Link href={viewHref} />} nativeButton={false} variant="ghost">
               Visualizar
               <ArrowRight data-icon="inline-end" />
             </Button>

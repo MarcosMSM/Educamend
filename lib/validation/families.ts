@@ -28,11 +28,17 @@ export type CreateStudentState =
     }
   | undefined
 
-export const UpdateStudentGradeLevelSchema = z.object({
+export const UpdateStudentProfileSchema = z.object({
+  fullName: z.string().trim().min(2, "Informe o nome do aluno."),
   gradeLevel: z.string().trim().max(60).optional().or(z.literal("")),
 })
 
-export type UpdateStudentGradeLevelState = { message?: string } | undefined
+export type UpdateStudentProfileState =
+  | {
+      errors?: { fullName?: string[]; gradeLevel?: string[] }
+      message?: string
+    }
+  | undefined
 
 export const UpdateFamilyCitySchema = z.object({
   city: z.string().trim().max(80).optional().or(z.literal("")),

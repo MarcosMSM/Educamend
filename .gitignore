@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# design references and scratch files (not part of the app)
+/Mteus_foto.jpg
+/Tela_Experiencias.jpg
+/Tela_Jornada.jpg
+/Tela_Planejamento.jpg
+/cores.jpg
+/fonte_site_antigo.jpg
+/cores.html
+/cores_files/
+/Tela jornada.html
+/Tela jornada_files/
+/preview.html

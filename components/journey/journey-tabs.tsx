@@ -26,7 +26,7 @@ export function JourneyTabs({
         return (
           <Link
             key={tab.value}
-            href={`/students/${studentId}/journey?tab=${tab.value}`}
+            href={`/students/${studentId}/journey/old?tab=${tab.value}`}
             className={cn(
               "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
               isActive

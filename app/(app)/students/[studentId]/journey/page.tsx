@@ -1,7 +1,12 @@
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { ArrowRight } from "lucide-react"
+
+import { getStudentById } from "@/lib/data/students"
+import { getAcademicYears } from "@/lib/data/planning"
 import {
   getJourneyExperienceById,
   getJourneyExperiences,
-  getJourneyInsights,
   getJourneyStats,
   getJourneyYears,
   type JourneyFilters,
@@ -14,18 +19,15 @@ import {
   type JourneySkill,
   type JourneyStatus,
 } from "@/lib/validation/journey"
-
-import { AiInsightsCard } from "@/components/journey/overview/ai-insights-card"
-import { DocumentsTab } from "@/components/journey/documents-tab"
+import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/journey/empty-state"
 import { ExperienceDetailSheet } from "@/components/journey/detail/experience-detail-sheet"
 import { SearchFilterBar } from "@/components/journey/filters/search-filter-bar"
-import { JourneyHeader } from "@/components/journey/journey-header"
-import { JOURNEY_TABS, JourneyTabs, type JourneyTabValue } from "@/components/journey/journey-tabs"
-import { ProjectsTab } from "@/components/journey/projects-tab"
-import { SkillsTab } from "@/components/journey/skills-tab"
-import { StatCards } from "@/components/journey/stat-cards"
-import { JourneyTimeline } from "@/components/journey/timeline/journey-timeline"
+import { ShareJourneyButton } from "@/components/journey/share-journey-button"
+import { StudentHeroBanner } from "@/components/students/student-hero-banner"
+import { CreateExperienceDialog } from "@/components/journey/v2/create-experience-dialog"
+import { ExperienceSummaryBar } from "@/components/journey/v2/experience-summary-bar"
+import { ExperienceTimelineV2 } from "@/components/journey/v2/experience-timeline-v2"
 
 function readString(value: string | string[] | undefined) {
   return typeof value === "string" ? value : undefined
@@ -41,10 +43,10 @@ export default async function JourneyPage({
   const { studentId } = await params
   const sp = await searchParams
 
-  const tabParam = readString(sp.tab)
-  const tab: JourneyTabValue = JOURNEY_TABS.some((item) => item.value === tabParam)
-    ? (tabParam as JourneyTabValue)
-    : "overview"
+  const student = await getStudentById(studentId)
+  if (!student) {
+    notFound()
+  }
 
   const search = readString(sp.q)
   const categoryParam = readString(sp.category)
@@ -63,10 +65,10 @@ export default async function JourneyPage({
 
   const filters: JourneyFilters = { search, category, status, skill, period }
 
-  const [experiences, stats, insights, availableYears] = await Promise.all([
+  const [years, experiences, stats, availableYears] = await Promise.all([
+    getAcademicYears(studentId),
     getJourneyExperiences(studentId, filters),
     getJourneyStats(studentId),
-    getJourneyInsights(studentId),
     getJourneyYears(studentId),
   ])
 
@@ -77,7 +79,6 @@ export default async function JourneyPage({
     : null
 
   const baseQuery = new URLSearchParams({
-    tab,
     ...(search ? { q: search } : {}),
     ...(category ? { category } : {}),
     ...(status ? { status } : {}),
@@ -87,61 +88,67 @@ export default async function JourneyPage({
 
   const basePath = `/students/${studentId}/journey`
   const viewHrefFor = (experienceId: string) =>
-    `${basePath}?${baseQuery}&experience=${experienceId}`
+    `${basePath}?${baseQuery}${baseQuery ? "&" : ""}experience=${experienceId}`
 
   return (
     <div className="grid gap-6">
-      <JourneyHeader studentId={studentId} />
+      <StudentHeroBanner
+        studentId={studentId}
+        studentName={student.full_name}
+        gradeLevel={student.grade_level}
+        avatarUrl={student.avatar_url}
+        years={years.map((year) => ({ id: year.id, name: year.name, status: year.status }))}
+      />
 
-      <StatCards stats={stats} />
-
-      <JourneyTabs activeTab={tab} studentId={studentId} />
-
-      {tab === "overview" && (
-        <div className="grid gap-6">
-          <AiInsightsCard insights={insights} />
-          {experiences.length === 0 ? (
-            <EmptyState
-              title="Sua jornada está esperando a primeira experiência"
-              description="Registre hackathons, projetos, voluntariado, cursos e outras experiências marcantes para começar a construir sua linha do tempo."
-              actionHref={`${basePath}/new`}
-              actionLabel="Registrar experiência"
-            />
-          ) : (
-            <div className="grid gap-3">
-              <h2 className="text-sm font-medium text-muted-foreground">
-                Experiências recentes
-              </h2>
-              <JourneyTimeline experiences={experiences.slice(0, 4)} viewHrefFor={viewHrefFor} />
-            </div>
-          )}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="grid gap-1">
+          <p className="text-xs font-semibold tracking-wide text-tree-branches uppercase">
+            Jornada · Experiências
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Registre trabalhos, intercâmbios, voluntariado, serviço, projetos e vivências que
+            contribuíram para o desenvolvimento do estudante.
+          </p>
+          <Link
+            href={`/students/${studentId}/journey/old`}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Ver versão anterior
+            <ArrowRight className="size-3.5" />
+          </Link>
         </div>
-      )}
 
-      {tab === "timeline" && (
-        <div className="grid gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            render={<Link href={`/students/${studentId}/portfolio/generate`} />}
+            nativeButton={false}
+            variant="outline"
+            size="sm"
+          >
+            Gerar portfólio
+          </Button>
+          <ShareJourneyButton studentId={studentId} />
+        </div>
+      </div>
+
+      <ExperienceSummaryBar stats={stats} />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <CreateExperienceDialog studentId={studentId} />
+        <div className="sm:flex-1">
           <SearchFilterBar availableYears={availableYears} />
-          {experiences.length === 0 ? (
-            <EmptyState
-              title="Nenhuma experiência encontrada"
-              description="Ajuste os filtros ou registre uma nova experiência para vê-la na sua linha do tempo."
-              actionHref={`${basePath}/new`}
-              actionLabel="Registrar experiência"
-            />
-          ) : (
-            <JourneyTimeline experiences={experiences} viewHrefFor={viewHrefFor} />
-          )}
         </div>
-      )}
+      </div>
 
-      {tab === "projects" && (
-        <ProjectsTab experiences={experiences} viewHrefFor={viewHrefFor} />
-      )}
-
-      {tab === "skills" && <SkillsTab experiences={experiences} />}
-
-      {tab === "documents" && (
-        <DocumentsTab experiences={experiences} viewHrefFor={viewHrefFor} />
+      {experiences.length === 0 ? (
+        <EmptyState
+          title="Nenhuma experiência encontrada"
+          description="Ajuste os filtros ou registre uma nova experiência para vê-la na sua linha do tempo."
+          actionHref={basePath}
+          actionLabel="Limpar filtros"
+        />
+      ) : (
+        <ExperienceTimelineV2 experiences={experiences} viewHrefFor={viewHrefFor} />
       )}
 
       <ExperienceDetailSheet experience={selectedExperience} studentId={studentId} />

@@ -7,9 +7,9 @@ import { getUserFamilies, requireUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import {
   CreateStudentSchema,
-  UpdateStudentGradeLevelSchema,
+  UpdateStudentProfileSchema,
   type CreateStudentState,
-  type UpdateStudentGradeLevelState,
+  type UpdateStudentProfileState,
 } from "@/lib/validation/families"
 
 export async function createStudent(
@@ -65,32 +65,76 @@ export async function createStudent(
   redirect(`/students/${student.id}`)
 }
 
-export async function updateStudentGradeLevel(
+export async function updateStudentProfile(
   studentId: string,
-  _state: UpdateStudentGradeLevelState,
+  _state: UpdateStudentProfileState,
   formData: FormData
-): Promise<UpdateStudentGradeLevelState> {
-  const validatedFields = UpdateStudentGradeLevelSchema.safeParse({
+): Promise<UpdateStudentProfileState> {
+  const validatedFields = UpdateStudentProfileSchema.safeParse({
+    fullName: formData.get("fullName"),
     gradeLevel: formData.get("gradeLevel"),
   })
 
   if (!validatedFields.success) {
-    return { message: "Dados inválidos." }
+    return { errors: validatedFields.error.flatten().fieldErrors }
   }
 
   await requireUser()
   const supabase = await createClient()
+  const { fullName, gradeLevel } = validatedFields.data
 
-  const { error } = await supabase
-    .from("students")
-    .update({ grade_level: validatedFields.data.gradeLevel || null })
-    .eq("id", studentId)
+  const updates: { full_name: string; grade_level: string | null; avatar_path?: string | null } = {
+    full_name: fullName,
+    grade_level: gradeLevel || null,
+  }
+
+  const removeAvatar = formData.get("removeAvatar") === "true"
+  const file = formData.get("avatar")
+
+  if (file instanceof File && file.size > 0) {
+    const { data: current } = await supabase
+      .from("students")
+      .select("avatar_path")
+      .eq("id", studentId)
+      .maybeSingle()
+
+    const extension = file.name.includes(".") ? `.${file.name.split(".").pop()}` : ""
+    const path = `${studentId}/${crypto.randomUUID()}${extension}`
+    const { error: uploadError } = await supabase.storage
+      .from("student-avatars")
+      .upload(path, file)
+
+    if (uploadError) {
+      return { message: "Não foi possível enviar a foto." }
+    }
+
+    if (current?.avatar_path) {
+      await supabase.storage.from("student-avatars").remove([current.avatar_path])
+    }
+
+    updates.avatar_path = path
+  } else if (removeAvatar) {
+    const { data: current } = await supabase
+      .from("students")
+      .select("avatar_path")
+      .eq("id", studentId)
+      .maybeSingle()
+
+    if (current?.avatar_path) {
+      await supabase.storage.from("student-avatars").remove([current.avatar_path])
+    }
+
+    updates.avatar_path = null
+  }
+
+  const { error } = await supabase.from("students").update(updates).eq("id", studentId)
 
   if (error) {
-    return { message: "Não foi possível salvar a série/ano." }
+    return { message: "Não foi possível salvar o perfil." }
   }
 
   revalidatePath(`/students/${studentId}`)
+  revalidatePath("/dashboard")
 }
 
 export async function deleteStudent(studentId: string) {

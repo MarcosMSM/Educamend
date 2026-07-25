@@ -1,6 +1,4 @@
 import { ExperienceCard } from "@/components/journey/timeline/experience-card"
-import { JOURNEY_GROUP_STYLES } from "@/components/journey/journey-meta"
-import { JOURNEY_CATEGORY_GROUPS } from "@/lib/validation/journey"
 import type { JourneyExperience } from "@/lib/data/journey"
 
 export function TimelineYearGroup({
@@ -22,18 +20,13 @@ export function TimelineYearGroup({
         </span>
       </div>
 
-      <div className="relative grid gap-4 pl-6 before:absolute before:top-2 before:bottom-2 before:left-[7px] before:w-px before:bg-border">
-        {experiences.map((experience) => {
-          const dotColor = JOURNEY_GROUP_STYLES[JOURNEY_CATEGORY_GROUPS[experience.category]].dot
-          return (
-            <div key={experience.id} className="relative">
-              <span
-                className={`absolute top-5 -left-6 size-3 rounded-full ring-4 ring-background ${dotColor}`}
-              />
-              <ExperienceCard experience={experience} viewHref={viewHrefFor(experience.id)} />
-            </div>
-          )
-        })}
+      <div className="relative grid gap-4 pl-6 before:absolute before:top-2 before:bottom-2 before:left-[7px] before:w-px before:bg-tree-branches/40">
+        {experiences.map((experience) => (
+          <div key={experience.id} className="relative">
+            <span className="absolute top-5 -left-6 size-4 rounded-full bg-tree-branches ring-4 ring-background" />
+            <ExperienceCard experience={experience} viewHref={viewHrefFor(experience.id)} />
+          </div>
+        ))}
       </div>
     </section>
   )

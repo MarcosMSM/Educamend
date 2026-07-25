@@ -3,6 +3,7 @@
 import { LogOut } from "lucide-react"
 
 import { logout } from "@/actions/auth"
+import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -20,10 +21,16 @@ function initials(name: string) {
     .join("")
 }
 
-export function UserMenu({ fullName }: { fullName: string }) {
+export function UserMenu({
+  fullName,
+  className,
+}: {
+  fullName: string
+  className?: string
+}) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="outline-none">
+      <DropdownMenuTrigger className={cn("outline-none", className)}>
         <Avatar>
           <AvatarFallback>{initials(fullName) || "?"}</AvatarFallback>
         </Avatar>

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Plus } from "lucide-react"
+import { ArrowRight, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { ShareJourneyButton } from "@/components/journey/share-journey-button"
@@ -12,6 +12,13 @@ export function JourneyHeader({ studentId }: { studentId: string }) {
         <p className="text-sm text-muted-foreground">
           As experiências que construíram quem você é.
         </p>
+        <Link
+          href={`/students/${studentId}/journey`}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          Voltar para a versão atual
+          <ArrowRight className="size-3.5" />
+        </Link>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

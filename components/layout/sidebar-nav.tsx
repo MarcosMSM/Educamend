@@ -8,7 +8,7 @@ import { NAV_ITEMS } from "@/components/layout/nav-items"
 import { StudentSidebarNav } from "@/components/layout/student-sidebar-nav"
 import { getActiveStudentId } from "@/components/layout/student-route"
 
-type StudentOption = { id: string; full_name: string }
+type StudentOption = { id: string; full_name: string; avatar_url: string | null }
 
 export function SidebarNav({ students }: { students: StudentOption[] }) {
   const pathname = usePathname()

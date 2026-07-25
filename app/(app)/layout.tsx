@@ -24,15 +24,16 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <aside className="hidden w-56 shrink-0 flex-col border-sidebar-border bg-sidebar text-sidebar-foreground md:flex md:border-r print:hidden">
-        <div className="border-b border-sidebar-border p-4 font-heading text-lg font-semibold">
-          Educamend Portal
+        <div className="flex items-center justify-between border-b border-sidebar-border p-4">
+          <span className="font-heading text-lg font-semibold">Educamend Portal</span>
+          <UserMenu fullName={fullName} />
         </div>
         <SidebarNav students={students} />
       </aside>
 
       <div className="flex flex-1 flex-col bg-background">
-        <header className="flex items-center justify-between border-b bg-card p-3 md:justify-end print:hidden">
-          <Link href="/dashboard" className="font-heading text-lg font-semibold md:hidden">
+        <header className="flex items-center justify-between border-b bg-card p-3 md:hidden print:hidden">
+          <Link href="/dashboard" className="font-heading text-lg font-semibold">
             Educamend Portal
           </Link>
           <UserMenu fullName={fullName} />

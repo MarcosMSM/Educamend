@@ -8,7 +8,7 @@ import { getStudents } from "@/lib/data/students"
 import { createClient } from "@/lib/supabase/server"
 import { calculateAge } from "@/lib/date"
 import { initials, relation } from "@/lib/utils"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -79,6 +79,9 @@ export default async function DashboardPage() {
                 className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/50"
               >
                 <Avatar>
+                  {student.avatar_url && (
+                    <AvatarImage src={student.avatar_url} alt={student.full_name} />
+                  )}
                   <AvatarFallback>{initials(student.full_name)}</AvatarFallback>
                 </Avatar>
                 <div>

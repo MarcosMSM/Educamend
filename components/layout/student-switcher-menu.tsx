@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ChevronsUpDown, Home } from "lucide-react"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { initials } from "@/lib/utils"
 
-type StudentOption = { id: string; full_name: string }
+type StudentOption = { id: string; full_name: string; avatar_url: string | null }
 
 export function StudentSwitcherMenu({
   students,
@@ -36,6 +36,7 @@ export function StudentSwitcherMenu({
         }
       >
         <Avatar size="sm">
+          {active?.avatar_url && <AvatarImage src={active.avatar_url} alt={active.full_name} />}
           <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground">
             {initials(active?.full_name ?? "?")}
           </AvatarFallback>
@@ -49,6 +50,9 @@ export function StudentSwitcherMenu({
         {siblings.map((student) => (
           <DropdownMenuItem key={student.id} render={<Link href={`/students/${student.id}`} />}>
             <Avatar size="sm">
+              {student.avatar_url && (
+                <AvatarImage src={student.avatar_url} alt={student.full_name} />
+              )}
               <AvatarFallback>{initials(student.full_name)}</AvatarFallback>
             </Avatar>
             {student.full_name}
