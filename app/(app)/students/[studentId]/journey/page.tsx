@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, GitBranch } from "lucide-react"
 
 import { getStudentById } from "@/lib/data/students"
 import { getAcademicYears } from "@/lib/data/planning"
@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/journey/empty-state"
 import { ExperienceDetailSheet } from "@/components/journey/detail/experience-detail-sheet"
 import { SearchFilterBar } from "@/components/journey/filters/search-filter-bar"
 import { ShareJourneyButton } from "@/components/journey/share-journey-button"
+import { JourneySectionHeader } from "@/components/students/journey-section-header"
 import { StudentHeroBanner } from "@/components/students/student-hero-banner"
 import { CreateExperienceDialog } from "@/components/journey/v2/create-experience-dialog"
 import { ExperienceSummaryBar } from "@/components/journey/v2/experience-summary-bar"
@@ -101,14 +102,13 @@ export default async function JourneyPage({
       />
 
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="grid gap-1">
-          <p className="text-xs font-semibold tracking-wide text-tree-branches uppercase">
-            Jornada · Experiências
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Registre trabalhos, intercâmbios, voluntariado, serviço, projetos e vivências que
-            contribuíram para o desenvolvimento do estudante.
-          </p>
+        <div className="grid gap-2">
+          <JourneySectionHeader
+            icon={GitBranch}
+            tone="branches"
+            title="Experiências"
+            description="Registre trabalhos, intercâmbios, voluntariado, serviço, projetos e vivências que contribuíram para o desenvolvimento do estudante."
+          />
           <Link
             href={`/students/${studentId}/journey/old`}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

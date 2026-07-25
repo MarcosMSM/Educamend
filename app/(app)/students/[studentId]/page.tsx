@@ -9,6 +9,7 @@ import { getHighlights } from "@/lib/data/portfolio"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeleteStudentButton } from "@/components/students/delete-student-button"
+import { JourneySectionHeader } from "@/components/students/journey-section-header"
 import { StudentHeroBanner } from "@/components/students/student-hero-banner"
 import { JourneyOverviewCard, type JourneyStage } from "@/components/students/journey-overview-card"
 
@@ -102,20 +103,12 @@ export default async function StudentOverviewPage({
       />
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-tree-fruit/15 text-tree-fruit">
-            <Sparkles className="size-4" />
-          </div>
-          <div>
-            <p className="font-heading text-xl font-semibold">
-              Jornada <span className="font-sans text-base font-normal text-muted-foreground">· Visão Geral</span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Acompanhe os pilares que formam a trajetória acadêmica, pessoal e prática do
-              estudante.
-            </p>
-          </div>
-        </div>
+        <JourneySectionHeader
+          icon={Sparkles}
+          tone="fruit"
+          title="Visão Geral"
+          description="Acompanhe os pilares que formam a trajetória acadêmica, pessoal e prática do estudante."
+        />
         <Button render={<Link href={`/students/${studentId}/journey/new`} />} nativeButton={false} variant="outline">
           <Plus />
           Registrar nova etapa

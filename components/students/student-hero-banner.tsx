@@ -27,7 +27,7 @@ export function StudentHeroBanner({
   const quote = getDailyStudentQuote()
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-sidebar px-5 py-3.5 text-white">
+    <div className="relative hidden overflow-hidden rounded-2xl bg-sidebar px-5 py-3.5 text-white md:block">
       <div className="relative z-10 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <Avatar className="size-11 shrink-0 ring-1 ring-white/15">

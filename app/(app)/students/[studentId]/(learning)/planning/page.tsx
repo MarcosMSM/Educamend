@@ -56,9 +56,6 @@ export default async function PlanningPage({
     <div className="grid gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
-          <p className="text-xs font-semibold tracking-wide text-tree-branches uppercase">
-            Planejamento · Visão acadêmica
-          </p>
           <p className="text-sm text-muted-foreground">
             Acompanhe disciplinas, materiais, períodos, créditos e o progresso do ano letivo.
           </p>
