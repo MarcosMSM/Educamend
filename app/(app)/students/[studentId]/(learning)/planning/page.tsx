@@ -7,6 +7,7 @@ import { getAreas } from "@/lib/data/areas"
 import { getDisciplines } from "@/lib/data/disciplines"
 import { getPlanningOverview } from "@/lib/data/planning"
 import { GRADE_LABELS, SPECIAL_COURSE_LABELS } from "@/lib/validation/courses"
+import { CURRICULUM_BASE_LABELS } from "@/lib/validation/planning"
 import { CreateAcademicYearForm } from "@/components/planning/create-academic-year-form"
 import { CourseForm } from "@/components/planning/course-form"
 import { CourseActionsMenu } from "@/components/planning/v2/course-actions-menu"
@@ -27,6 +28,23 @@ const STATUS_LABELS: Record<string, string> = {
   planning: "Planejamento",
   active: "Em andamento",
   completed: "Concluído",
+}
+
+function curriculumLabel(year: {
+  curriculum_base: string | null
+  curriculum_base_other: string | null
+  cc_level: string | null
+}) {
+  if (year.curriculum_base === "cc") {
+    return year.cc_level ? `CC · ${year.cc_level}` : "CC"
+  }
+  if (year.curriculum_base === "outro") {
+    return year.curriculum_base_other || "Outro"
+  }
+  if (year.curriculum_base === "regular") {
+    return CURRICULUM_BASE_LABELS.regular
+  }
+  return null
 }
 
 export default async function PlanningPage({
@@ -122,6 +140,16 @@ export default async function PlanningPage({
                   <BookOpen className="size-4" />
                 </div>
                 <span className="text-sm font-semibold">{year.name}</span>
+                {year.grade_level && (
+                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/90">
+                    Ano Escolar: {year.grade_level}
+                  </span>
+                )}
+                {curriculumLabel(year) && (
+                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/90">
+                    Currículo: {curriculumLabel(year)}
+                  </span>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-4 text-xs">
                 <span className="flex items-center gap-1.5 text-white/80">
@@ -171,6 +199,8 @@ export default async function PlanningPage({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Curso</TableHead>
+                      <TableHead>Área</TableHead>
                       <TableHead>Disciplina</TableHead>
                       <TableHead>Material</TableHead>
                       <TableHead>Período</TableHead>
@@ -190,9 +220,6 @@ export default async function PlanningPage({
                             </div>
                             <div>
                               <div className="font-medium">{course.title}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {relation(course.disciplines)?.name}
-                              </div>
                               {course.special_course &&
                                 course.special_course !== "nenhum" && (
                                   <Badge variant="outline" className="mt-1">
@@ -203,6 +230,12 @@ export default async function PlanningPage({
                                 )}
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-sm text-muted-foreground">
+                          {relation(course.areas)?.name}
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-sm text-muted-foreground">
+                          {relation(course.disciplines)?.name}
                         </TableCell>
                         <TableCell className="whitespace-normal text-sm text-muted-foreground">
                           {course.resource || "—"}

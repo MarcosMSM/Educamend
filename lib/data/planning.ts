@@ -8,7 +8,9 @@ export async function getAcademicYears(studentId: string) {
 
   const { data, error } = await supabase
     .from("academic_years")
-    .select("id, name, start_date, end_date, status")
+    .select(
+      "id, name, start_date, end_date, status, grade_level, curriculum_base, curriculum_base_other, cc_level"
+    )
     .eq("student_id", studentId)
     .order("start_date", { ascending: false })
 
@@ -72,7 +74,9 @@ export async function getAcademicYearById(academicYearId: string) {
 
   const { data, error } = await supabase
     .from("academic_years")
-    .select("id, name, start_date, end_date, status, student_id")
+    .select(
+      "id, name, start_date, end_date, status, student_id, grade_level, curriculum_base, curriculum_base_other, cc_level"
+    )
     .eq("id", academicYearId)
     .maybeSingle()
 
