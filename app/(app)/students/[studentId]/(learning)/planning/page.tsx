@@ -1,6 +1,23 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight, BookOpen, Diamond, Download, RotateCw } from "lucide-react"
+import {
+  ArrowRight,
+  BookOpen,
+  Calculator,
+  Church,
+  Cpu,
+  Diamond,
+  Download,
+  Dumbbell,
+  FlaskConical,
+  HelpCircle,
+  Landmark,
+  Languages,
+  Palette,
+  RotateCw,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react"
 
 import { getUserFamilies } from "@/lib/auth"
 import { getAreas } from "@/lib/data/areas"
@@ -28,6 +45,24 @@ const STATUS_LABELS: Record<string, string> = {
   planning: "Planejamento",
   active: "Em andamento",
   completed: "Concluído",
+}
+
+const AREA_ICONS: Record<string, LucideIcon> = {
+  "Arte": Palette,
+  "Ciências da Natureza": FlaskConical,
+  "Ciências Humanas": Landmark,
+  "Educação Física": Dumbbell,
+  "Ensino Religioso": Church,
+  "Finanças Pessoais": Wallet,
+  "Língua Estrangeira": Languages,
+  "Língua Portuguesa": BookOpen,
+  "Matemática": Calculator,
+  "Tecnologia": Cpu,
+  "Outro": HelpCircle,
+}
+
+function getAreaIcon(areaName: string | undefined) {
+  return (areaName && AREA_ICONS[areaName]) || BookOpen
 }
 
 function curriculumLabel(year: {
@@ -211,12 +246,14 @@ export default async function PlanningPage({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {year.courses.map((course) => (
+                    {year.courses.map((course) => {
+                      const AreaIcon = getAreaIcon(relation(course.areas)?.name)
+                      return (
                       <TableRow key={course.id}>
                         <TableCell className="whitespace-normal">
                           <div className="flex items-start gap-3">
                             <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-tree-branches/15 text-tree-branches">
-                              <BookOpen className="size-4" />
+                              <AreaIcon className="size-4" />
                             </div>
                             <div>
                               <div className="font-medium">{course.title}</div>
@@ -266,7 +303,8 @@ export default async function PlanningPage({
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      )
+                    })}
                   </TableBody>
                 </Table>
               )}
