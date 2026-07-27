@@ -34,13 +34,25 @@ async function resolveDisciplineId(
     }
   }
 
-  const { data, error } = await supabase
+  const { error: insertError } = await supabase
     .from("disciplines")
-    .upsert({ area_id: areaId, name }, { onConflict: "area_id,name" })
+    .upsert(
+      { area_id: areaId, name },
+      { onConflict: "area_id,name", ignoreDuplicates: true }
+    )
+
+  if (insertError) {
+    return { error: { message: "Não foi possível criar a disciplina." } }
+  }
+
+  const { data, error: selectError } = await supabase
+    .from("disciplines")
     .select("id")
+    .eq("area_id", areaId)
+    .eq("name", name)
     .single()
 
-  if (error || !data) {
+  if (selectError || !data) {
     return { error: { message: "Não foi possível criar a disciplina." } }
   }
 
@@ -57,7 +69,7 @@ export async function createCourse(
     termId: formData.get("termId"),
     areaId: formData.get("areaId"),
     disciplineId: formData.get("disciplineId"),
-    newDisciplineName: formData.get("newDisciplineName"),
+    newDisciplineName: formData.get("newDisciplineName") ?? "",
     title: formData.get("title"),
     resource: formData.get("resource"),
     specialCourse: formData.get("specialCourse"),
@@ -128,7 +140,7 @@ export async function updateCourse(
     termId: formData.get("termId"),
     areaId: formData.get("areaId"),
     disciplineId: formData.get("disciplineId"),
-    newDisciplineName: formData.get("newDisciplineName"),
+    newDisciplineName: formData.get("newDisciplineName") ?? "",
     title: formData.get("title"),
     resource: formData.get("resource"),
     specialCourse: formData.get("specialCourse"),
