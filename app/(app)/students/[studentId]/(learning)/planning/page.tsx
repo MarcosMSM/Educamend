@@ -27,6 +27,7 @@ import { GRADE_LABELS, SPECIAL_COURSE_LABELS } from "@/lib/validation/courses"
 import { CURRICULUM_BASE_LABELS } from "@/lib/validation/planning"
 import { CreateAcademicYearForm } from "@/components/planning/create-academic-year-form"
 import { CourseForm } from "@/components/planning/course-form"
+import { DeleteAcademicYearButton } from "@/components/planning/delete-academic-year-button"
 import { CourseActionsMenu } from "@/components/planning/v2/course-actions-menu"
 import { UpdateAcademicYearForm } from "@/components/planning/update-academic-year-form"
 import { CourseStatusPill } from "@/components/planning/course-status-pill"
@@ -218,6 +219,12 @@ export default async function PlanningPage({
                   />
                 )}
                 <UpdateAcademicYearForm studentId={studentId} academicYear={year} />
+                <DeleteAcademicYearButton
+                  studentId={studentId}
+                  academicYearId={year.id}
+                  academicYearName={year.name}
+                  triggerClassName="text-white hover:bg-white/10 hover:text-white"
+                />
               </div>
             </div>
 

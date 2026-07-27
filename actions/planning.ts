@@ -159,6 +159,25 @@ export async function updateAcademicYear(
   revalidatePath(`/students/${studentId}/planning`)
 }
 
+export async function deleteAcademicYear(
+  studentId: string,
+  academicYearId: string
+) {
+  await requireUser()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("academic_years")
+    .delete()
+    .eq("id", academicYearId)
+
+  if (error) {
+    throw new Error("Não foi possível remover o ano letivo.")
+  }
+
+  revalidatePath(`/students/${studentId}/planning`)
+}
+
 export async function createTerm(
   studentId: string,
   _state: CreateTermState,
