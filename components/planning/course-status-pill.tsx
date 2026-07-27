@@ -1,7 +1,5 @@
 import { cn } from "@/lib/utils"
-import { GRADE_LABELS, GRADE_OPTIONS } from "@/lib/validation/courses"
 
-type Grade = (typeof GRADE_OPTIONS)[number]
 type Tone = "progress" | "warning" | "danger" | "done"
 
 const TONE_CLASSES: Record<Tone, { pill: string; dot: string }> = {
@@ -21,8 +19,7 @@ function getCourseStatus(grade: string | null): { label: string; tone: Tone } {
   if (grade === "f") {
     return { label: "Reprovado", tone: "danger" }
   }
-  const label = GRADE_LABELS[grade as Grade]
-  return { label: label ? `Concluído · ${label}` : "Concluído", tone: "done" }
+  return { label: "Concluído", tone: "done" }
 }
 
 export function CourseStatusPill({ grade }: { grade: string | null }) {

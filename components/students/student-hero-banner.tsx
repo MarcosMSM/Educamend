@@ -59,7 +59,13 @@ export function StudentHeroBanner({
           <div className="flex items-center gap-3 overflow-x-auto pb-1 lg:pl-6">
             {years.map((year, index) => (
               <div key={year.id} className="flex items-center gap-3">
-                <div className="grid shrink-0 gap-0.5 text-center">
+                <div className="grid shrink-0 justify-items-center gap-1 text-center">
+                  <span
+                    className={cn(
+                      "size-2.5 shrink-0 rounded-full border-[1.5px] border-tree-fruit",
+                      year.status === "completed" ? "bg-tree-fruit" : "bg-transparent"
+                    )}
+                  />
                   <span
                     className={cn(
                       "font-heading text-xs",
@@ -73,9 +79,7 @@ export function StudentHeroBanner({
                   </span>
                 </div>
                 {index < years.length - 1 && (
-                  <span className="relative h-px w-6 shrink-0 bg-white/20">
-                    <span className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-tree-fruit" />
-                  </span>
+                  <span className="h-px w-6 shrink-0 bg-white/20" />
                 )}
               </div>
             ))}

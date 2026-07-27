@@ -44,6 +44,10 @@ export async function createAcademicYear(
     name: formData.get("name"),
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
+    gradeLevel: formData.get("gradeLevel") ?? "",
+    curriculumBase: formData.get("curriculumBase") ?? "",
+    curriculumBaseOther: formData.get("curriculumBaseOther") ?? "",
+    ccLevel: formData.get("ccLevel") ?? "",
   })
 
   if (!validatedFields.success) {
@@ -52,7 +56,15 @@ export async function createAcademicYear(
 
   await requireUser()
   const supabase = await createClient()
-  const { name, startDate, endDate } = validatedFields.data
+  const {
+    name,
+    startDate,
+    endDate,
+    gradeLevel,
+    curriculumBase,
+    curriculumBaseOther,
+    ccLevel,
+  } = validatedFields.data
 
   const { data: year, error } = await supabase
     .from("academic_years")
@@ -61,6 +73,11 @@ export async function createAcademicYear(
       name,
       start_date: startDate,
       end_date: endDate,
+      grade_level: gradeLevel || null,
+      curriculum_base: curriculumBase || null,
+      curriculum_base_other:
+        curriculumBase === "outro" ? curriculumBaseOther || null : null,
+      cc_level: curriculumBase === "cc" ? ccLevel || null : null,
     })
     .select("id")
     .single()

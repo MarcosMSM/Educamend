@@ -45,6 +45,13 @@ export const CreateAcademicYearSchema = z
     name: z.string().trim().min(1, "Informe um nome para o ano letivo."),
     startDate: z.string().min(1, "Informe a data de início."),
     endDate: z.string().min(1, "Informe a data de término."),
+    gradeLevel: z.enum(GRADE_LEVEL_OPTIONS).optional().or(z.literal("")),
+    curriculumBase: z
+      .enum(CURRICULUM_BASE_OPTIONS)
+      .optional()
+      .or(z.literal("")),
+    curriculumBaseOther: z.string().trim().optional().or(z.literal("")),
+    ccLevel: z.enum(CC_LEVEL_OPTIONS).optional().or(z.literal("")),
   })
   .refine((data) => data.endDate >= data.startDate, {
     error: "A data de término deve ser depois da data de início.",
@@ -53,7 +60,13 @@ export const CreateAcademicYearSchema = z
 
 export type CreateAcademicYearState =
   | {
-      errors?: { name?: string[]; startDate?: string[]; endDate?: string[] }
+      errors?: {
+        name?: string[]
+        startDate?: string[]
+        endDate?: string[]
+        curriculumBaseOther?: string[]
+        ccLevel?: string[]
+      }
       message?: string
     }
   | undefined
