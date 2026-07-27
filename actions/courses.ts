@@ -43,11 +43,7 @@ async function resolveDisciplineId(
 
   if (insertError) {
     console.error("resolveDisciplineId upsert error", insertError)
-    return {
-      error: {
-        message: `Não foi possível criar a disciplina. (${insertError.message})`,
-      },
-    }
+    return { error: { message: "Não foi possível criar a disciplina." } }
   }
 
   const { data, error: selectError } = await supabase
@@ -59,11 +55,7 @@ async function resolveDisciplineId(
 
   if (selectError || !data) {
     console.error("resolveDisciplineId select error", selectError)
-    return {
-      error: {
-        message: `Não foi possível criar a disciplina. (${selectError?.message})`,
-      },
-    }
+    return { error: { message: "Não foi possível criar a disciplina." } }
   }
 
   return { disciplineId: data.id }
@@ -134,7 +126,7 @@ export async function createCourse(
 
   if (error) {
     console.error("createCourse insert error", error)
-    return { message: `Não foi possível salvar o curso. (${error.message})` }
+    return { message: "Não foi possível salvar o curso." }
   }
 
   revalidatePath(`/students/${studentId}/planning`)
@@ -207,9 +199,7 @@ export async function updateCourse(
 
   if (error) {
     console.error("updateCourse update error", error)
-    return {
-      message: `Não foi possível atualizar o curso. (${error.message})`,
-    }
+    return { message: "Não foi possível atualizar o curso." }
   }
 
   revalidatePath(`/students/${studentId}/planning`)
