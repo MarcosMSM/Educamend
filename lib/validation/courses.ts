@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+export const NEW_DISCIPLINE_VALUE = "new"
+
 export const SPECIAL_COURSE_OPTIONS = [
   "nenhum",
   "honras",
@@ -60,7 +62,9 @@ export const GRADE_LABELS: Record<(typeof GRADE_OPTIONS)[number], string> = {
 export const CreateCourseSchema = z.object({
   academicYearId: z.uuid(),
   termId: z.uuid("Selecione um período."),
-  subjectId: z.uuid("Selecione uma categoria."),
+  areaId: z.uuid("Selecione uma área."),
+  disciplineId: z.string().min(1, "Selecione uma disciplina."),
+  newDisciplineName: z.string().trim().optional().or(z.literal("")),
   title: z.string().trim().min(1, "Informe o nome do curso."),
   resource: z.string().trim().optional().or(z.literal("")),
   specialCourse: z.enum(SPECIAL_COURSE_OPTIONS).optional(),
@@ -73,7 +77,9 @@ export type CreateCourseState =
   | {
       errors?: {
         termId?: string[]
-        subjectId?: string[]
+        areaId?: string[]
+        disciplineId?: string[]
+        newDisciplineName?: string[]
         title?: string[]
       }
       message?: string

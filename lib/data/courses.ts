@@ -8,7 +8,7 @@ export async function getCoursesByAcademicYear(academicYearId: string) {
   const { data, error } = await supabase
     .from("courses")
     .select(
-      "id, title, resource, special_course, grade, credits, notes, term_id, subject_id, subjects(id, name), terms(id, name)"
+      "id, title, resource, special_course, grade, credits, notes, term_id, area_id, discipline_id, areas(id, name), disciplines(id, name), terms(id, name)"
     )
     .eq("academic_year_id", academicYearId)
     .order("created_at")
@@ -26,7 +26,7 @@ export async function getCourseById(courseId: string) {
   const { data, error } = await supabase
     .from("courses")
     .select(
-      "id, student_id, academic_year_id, term_id, subject_id, title, resource, special_course, grade, credits, notes"
+      "id, student_id, academic_year_id, term_id, area_id, discipline_id, title, resource, special_course, grade, credits, notes"
     )
     .eq("id", courseId)
     .maybeSingle()

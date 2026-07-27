@@ -3,7 +3,8 @@ import { redirect } from "next/navigation"
 import { ArrowRight, BookOpen, Diamond, Download, RotateCw } from "lucide-react"
 
 import { getUserFamilies } from "@/lib/auth"
-import { getAvailableSubjects } from "@/lib/data/curriculum"
+import { getAreas } from "@/lib/data/areas"
+import { getDisciplines } from "@/lib/data/disciplines"
 import { getPlanningOverview } from "@/lib/data/planning"
 import { GRADE_LABELS, SPECIAL_COURSE_LABELS } from "@/lib/validation/courses"
 import { CreateAcademicYearForm } from "@/components/planning/create-academic-year-form"
@@ -43,9 +44,10 @@ export default async function PlanningPage({
     redirect("/onboarding/family")
   }
 
-  const [allYears, availableSubjects] = await Promise.all([
+  const [allYears, availableAreas, availableDisciplines] = await Promise.all([
     getPlanningOverview(studentId),
-    getAvailableSubjects(family.id),
+    getAreas(),
+    getDisciplines(),
   ])
 
   const sp = await searchParams
@@ -146,7 +148,8 @@ export default async function PlanningPage({
                     studentId={studentId}
                     academicYearId={year.id}
                     terms={year.terms}
-                    availableSubjects={availableSubjects}
+                    availableAreas={availableAreas}
+                    availableDisciplines={availableDisciplines}
                     triggerClassName="bg-white text-[var(--sidebar)] hover:bg-white/90"
                     triggerSize="sm"
                   />
@@ -188,7 +191,7 @@ export default async function PlanningPage({
                             <div>
                               <div className="font-medium">{course.title}</div>
                               <div className="text-xs text-muted-foreground">
-                                {relation(course.subjects)?.name}
+                                {relation(course.disciplines)?.name}
                               </div>
                               {course.special_course &&
                                 course.special_course !== "nenhum" && (
@@ -222,7 +225,8 @@ export default async function PlanningPage({
                               studentId={studentId}
                               academicYearId={year.id}
                               terms={year.terms}
-                              availableSubjects={availableSubjects}
+                              availableAreas={availableAreas}
+                              availableDisciplines={availableDisciplines}
                               course={course}
                             />
                             <CourseActionsMenu studentId={studentId} courseId={course.id} />

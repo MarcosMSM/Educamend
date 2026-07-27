@@ -14,17 +14,20 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 type Option = { id: string; name: string }
+type DisciplineOption = Option & { area_id: string }
 type Year = Awaited<ReturnType<typeof getPlanningOverview>>[number]
 
 export function YearAccordion({
   studentId,
   year,
-  availableSubjects,
+  availableAreas,
+  availableDisciplines,
   defaultOpen,
 }: {
   studentId: string
   year: Year
-  availableSubjects: Option[]
+  availableAreas: Option[]
+  availableDisciplines: DisciplineOption[]
   defaultOpen?: boolean
 }) {
   const totalCredits = year.creditsCompleted + year.creditsInProgress
@@ -67,7 +70,8 @@ export function YearAccordion({
               studentId={studentId}
               academicYearId={year.id}
               terms={year.terms}
-              availableSubjects={availableSubjects}
+              availableAreas={availableAreas}
+              availableDisciplines={availableDisciplines}
             />
           )}
         </div>
@@ -89,7 +93,8 @@ export function YearAccordion({
                 studentId={studentId}
                 academicYearId={year.id}
                 terms={year.terms}
-                availableSubjects={availableSubjects}
+                availableAreas={availableAreas}
+                availableDisciplines={availableDisciplines}
                 course={course}
               />
             ))}

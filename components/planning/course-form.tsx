@@ -7,6 +7,7 @@ import { createCourse, updateCourse } from "@/actions/courses"
 import {
   GRADE_LABELS,
   GRADE_OPTIONS,
+  NEW_DISCIPLINE_VALUE,
   SPECIAL_COURSE_LABELS,
   SPECIAL_COURSE_OPTIONS,
 } from "@/lib/validation/courses"
@@ -33,11 +34,13 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 
 type Option = { id: string; name: string }
+type DisciplineOption = Option & { area_id: string }
 
 type Course = {
   id: string
   term_id: string
-  subject_id: string
+  area_id: string
+  discipline_id: string
   title: string
   resource: string | null
   special_course: string | null
@@ -50,7 +53,8 @@ export function CourseForm({
   studentId,
   academicYearId,
   terms,
-  availableSubjects,
+  availableAreas,
+  availableDisciplines,
   course,
   triggerClassName,
   triggerSize,
@@ -58,12 +62,15 @@ export function CourseForm({
   studentId: string
   academicYearId: string
   terms: Option[]
-  availableSubjects: Option[]
+  availableAreas: Option[]
+  availableDisciplines: DisciplineOption[]
   course?: Course
   triggerClassName?: string
   triggerSize?: "default" | "sm"
 }) {
   const [open, setOpen] = useState(false)
+  const [areaId, setAreaId] = useState(course?.area_id ?? "")
+  const [disciplineId, setDisciplineId] = useState(course?.discipline_id ?? "")
   const isEditing = !!course
 
   const boundAction = isEditing
@@ -73,13 +80,37 @@ export function CourseForm({
 
   useCloseDialogOnSuccess(pending, !!(state?.errors || state?.message), setOpen)
 
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen)
+    if (nextOpen) {
+      setAreaId(course?.area_id ?? "")
+      setDisciplineId(course?.discipline_id ?? "")
+    }
+  }
+
+  function handleAreaChange(value: string | null) {
+    setAreaId(value ?? "")
+    setDisciplineId("")
+  }
+
+  function handleDisciplineChange(value: string | null) {
+    setDisciplineId(value ?? "")
+  }
+
   const termItems = Object.fromEntries(terms.map((t) => [t.id, t.name]))
-  const subjectItems = Object.fromEntries(
-    availableSubjects.map((s) => [s.id, s.name])
+  const areaItems = Object.fromEntries(
+    availableAreas.map((a) => [a.id, a.name])
   )
+  const disciplinesForArea = availableDisciplines.filter(
+    (d) => d.area_id === areaId
+  )
+  const disciplineItems = Object.fromEntries([
+    ...disciplinesForArea.map((d) => [d.id, d.name]),
+    [NEW_DISCIPLINE_VALUE, "Outro (nova disciplina)"],
+  ])
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Button
@@ -110,46 +141,96 @@ export function CourseForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label>Categoria (disciplina)</Label>
+              <Label>Área</Label>
               <Select
-                key={course?.subject_id ?? "new"}
-                name="subjectId"
-                defaultValue={course?.subject_id}
-                items={subjectItems}
+                name="areaId"
+                value={areaId}
+                onValueChange={handleAreaChange}
+                items={areaItems}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableSubjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
+                  {availableAreas.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {area.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {state?.errors?.subjectId && (
+              {state?.errors?.areaId && (
                 <p className="text-sm text-destructive">
-                  {state.errors.subjectId[0]}
+                  {state.errors.areaId[0]}
                 </p>
               )}
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="course-title">Nome do curso</Label>
-              <Input
-                id="course-title"
-                name="title"
-                placeholder="Ex.: Inglês 11"
-                defaultValue={course?.title}
-                required
-              />
-              {state?.errors?.title && (
+              <Label>Disciplina</Label>
+              <Select
+                name="disciplineId"
+                value={disciplineId}
+                onValueChange={handleDisciplineChange}
+                items={disciplineItems}
+                disabled={!areaId}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={areaId ? "Selecione" : "Escolha a área primeiro"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {disciplinesForArea.map((discipline) => (
+                    <SelectItem key={discipline.id} value={discipline.id}>
+                      {discipline.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_DISCIPLINE_VALUE}>
+                    Outro (nova disciplina)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {state?.errors?.disciplineId && (
                 <p className="text-sm text-destructive">
-                  {state.errors.title[0]}
+                  {state.errors.disciplineId[0]}
                 </p>
               )}
+              {disciplineId === NEW_DISCIPLINE_VALUE && (
+                <div className="grid gap-1">
+                  <Input
+                    name="newDisciplineName"
+                    placeholder="Nome da nova disciplina"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Será adicionada à área escolhida e ficará disponível para
+                    os próximos cursos.
+                  </p>
+                  {state?.errors?.newDisciplineName && (
+                    <p className="text-sm text-destructive">
+                      {state.errors.newDisciplineName[0]}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="course-title">Nome do curso</Label>
+            <Input
+              id="course-title"
+              name="title"
+              placeholder="Ex.: Inglês 11"
+              defaultValue={course?.title}
+              required
+            />
+            {state?.errors?.title && (
+              <p className="text-sm text-destructive">
+                {state.errors.title[0]}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2">

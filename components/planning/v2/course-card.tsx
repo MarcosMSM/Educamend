@@ -6,19 +6,22 @@ import { GRADE_LABELS, SPECIAL_COURSE_LABELS } from "@/lib/validation/courses"
 import { relation } from "@/lib/utils"
 
 type Option = { id: string; name: string }
+type DisciplineOption = Option & { area_id: string }
 type Course = Awaited<ReturnType<typeof getCoursesByAcademicYear>>[number]
 
 export function CourseCard({
   studentId,
   academicYearId,
   terms,
-  availableSubjects,
+  availableAreas,
+  availableDisciplines,
   course,
 }: {
   studentId: string
   academicYearId: string
   terms: Option[]
-  availableSubjects: Option[]
+  availableAreas: Option[]
+  availableDisciplines: DisciplineOption[]
   course: Course
 }) {
   return (
@@ -27,7 +30,7 @@ export function CourseCard({
         <div className="min-w-0">
           <div className="truncate font-medium">{course.title}</div>
           <div className="truncate text-xs text-muted-foreground">
-            {relation(course.subjects)?.name}
+            {relation(course.disciplines)?.name}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
@@ -35,7 +38,8 @@ export function CourseCard({
             studentId={studentId}
             academicYearId={academicYearId}
             terms={terms}
-            availableSubjects={availableSubjects}
+            availableAreas={availableAreas}
+            availableDisciplines={availableDisciplines}
             course={course}
           />
           <CourseActionsMenu studentId={studentId} courseId={course.id} />

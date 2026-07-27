@@ -140,7 +140,7 @@ export function ReportView({
                         <TableCell className="whitespace-normal">
                           <div className="font-medium">{course.title}</div>
                           <div className="text-xs text-muted-foreground">
-                            {relation(course.subjects)?.name}
+                            {relation(course.disciplines)?.name}
                           </div>
                           {course.special_course &&
                             course.special_course !== "nenhum" && (

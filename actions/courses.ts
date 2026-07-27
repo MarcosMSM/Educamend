@@ -7,10 +7,45 @@ import { createClient } from "@/lib/supabase/server"
 import { getCourseById } from "@/lib/data/courses"
 import {
   CreateCourseSchema,
+  NEW_DISCIPLINE_VALUE,
   UpdateCourseSchema,
   type CreateCourseState,
   type UpdateCourseState,
 } from "@/lib/validation/courses"
+
+type Supabase = Awaited<ReturnType<typeof createClient>>
+
+async function resolveDisciplineId(
+  supabase: Supabase,
+  areaId: string,
+  disciplineId: string,
+  newDisciplineName: string | undefined
+): Promise<{ disciplineId: string } | { error: CreateCourseState }> {
+  if (disciplineId !== NEW_DISCIPLINE_VALUE) {
+    return { disciplineId }
+  }
+
+  const name = newDisciplineName?.trim()
+  if (!name) {
+    return {
+      error: {
+        errors: { newDisciplineName: ["Informe o nome da nova disciplina."] },
+      },
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("disciplines")
+    .upsert({ area_id: areaId, name }, { onConflict: "area_id,name" })
+    .select("id")
+    .single()
+
+  if (error || !data) {
+    return { error: { message: "Não foi possível criar a disciplina." } }
+  }
+
+  return { disciplineId: data.id }
+}
 
 export async function createCourse(
   studentId: string,
@@ -20,7 +55,9 @@ export async function createCourse(
   const validatedFields = CreateCourseSchema.safeParse({
     academicYearId: formData.get("academicYearId"),
     termId: formData.get("termId"),
-    subjectId: formData.get("subjectId"),
+    areaId: formData.get("areaId"),
+    disciplineId: formData.get("disciplineId"),
+    newDisciplineName: formData.get("newDisciplineName"),
     title: formData.get("title"),
     resource: formData.get("resource"),
     specialCourse: formData.get("specialCourse"),
@@ -38,7 +75,9 @@ export async function createCourse(
   const {
     academicYearId,
     termId,
-    subjectId,
+    areaId,
+    disciplineId,
+    newDisciplineName,
     title,
     resource,
     specialCourse,
@@ -47,11 +86,22 @@ export async function createCourse(
     notes,
   } = validatedFields.data
 
+  const resolved = await resolveDisciplineId(
+    supabase,
+    areaId,
+    disciplineId,
+    newDisciplineName
+  )
+  if ("error" in resolved) {
+    return resolved.error
+  }
+
   const { error } = await supabase.from("courses").insert({
     student_id: studentId,
     academic_year_id: academicYearId,
     term_id: termId,
-    subject_id: subjectId,
+    area_id: areaId,
+    discipline_id: resolved.disciplineId,
     title,
     resource: resource || null,
     special_course: specialCourse || null,
@@ -76,7 +126,9 @@ export async function updateCourse(
     courseId: formData.get("courseId"),
     academicYearId: formData.get("academicYearId"),
     termId: formData.get("termId"),
-    subjectId: formData.get("subjectId"),
+    areaId: formData.get("areaId"),
+    disciplineId: formData.get("disciplineId"),
+    newDisciplineName: formData.get("newDisciplineName"),
     title: formData.get("title"),
     resource: formData.get("resource"),
     specialCourse: formData.get("specialCourse"),
@@ -94,7 +146,9 @@ export async function updateCourse(
   const {
     courseId,
     termId,
-    subjectId,
+    areaId,
+    disciplineId,
+    newDisciplineName,
     title,
     resource,
     specialCourse,
@@ -103,11 +157,22 @@ export async function updateCourse(
     notes,
   } = validatedFields.data
 
+  const resolved = await resolveDisciplineId(
+    supabase,
+    areaId,
+    disciplineId,
+    newDisciplineName
+  )
+  if ("error" in resolved) {
+    return resolved.error
+  }
+
   const { error } = await supabase
     .from("courses")
     .update({
       term_id: termId,
-      subject_id: subjectId,
+      area_id: areaId,
+      discipline_id: resolved.disciplineId,
       title,
       resource: resource || null,
       special_course: specialCourse || null,
@@ -138,7 +203,8 @@ export async function duplicateCourse(studentId: string, courseId: string) {
     student_id: course.student_id,
     academic_year_id: course.academic_year_id,
     term_id: course.term_id,
-    subject_id: course.subject_id,
+    area_id: course.area_id,
+    discipline_id: course.discipline_id,
     title: course.title,
     resource: course.resource,
     special_course: course.special_course,

@@ -3,7 +3,8 @@ import { redirect } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 
 import { getUserFamilies } from "@/lib/auth"
-import { getAvailableSubjects } from "@/lib/data/curriculum"
+import { getAreas } from "@/lib/data/areas"
+import { getDisciplines } from "@/lib/data/disciplines"
 import { getPlanningOverview } from "@/lib/data/planning"
 import { CreateAcademicYearForm } from "@/components/planning/create-academic-year-form"
 import { YearAccordion } from "@/components/planning/v2/year-accordion"
@@ -21,9 +22,10 @@ export default async function PlanningV2Page({
     redirect("/onboarding/family")
   }
 
-  const [years, availableSubjects] = await Promise.all([
+  const [years, availableAreas, availableDisciplines] = await Promise.all([
     getPlanningOverview(studentId),
-    getAvailableSubjects(family.id),
+    getAreas(),
+    getDisciplines(),
   ])
 
   return (
@@ -59,7 +61,8 @@ export default async function PlanningV2Page({
               key={year.id}
               studentId={studentId}
               year={year}
-              availableSubjects={availableSubjects}
+              availableAreas={availableAreas}
+              availableDisciplines={availableDisciplines}
               defaultOpen={index === 0}
             />
           ))}
